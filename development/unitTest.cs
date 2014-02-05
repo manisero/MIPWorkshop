@@ -40,13 +40,12 @@ namespace MIP.MarketBackend.BLL.Tests.DataManagement.Dashboard
 		[TestMethod]
 		public void BuildTouchpointsTest()
 		{
-			const int toolId = 15;
+			const int toolId = 16;
 			var summaryList = new List<DashboardSummary>();
 			var touchpointsSummaryBuilder = new TouchpointsSummaryBuilder(summaryList, toolId);
 			ISummary summary = touchpointsSummaryBuilder.Build();
 			Assert.IsNotNull(summary);
-			Assert.IsNotNull(summary);
-			
+	
 		}
 
 		[TestMethod]
