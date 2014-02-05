@@ -45,6 +45,8 @@ namespace MIP.MarketBackend.BLL.Tests.DataManagement.Dashboard
 			var touchpointsSummaryBuilder = new TouchpointsSummaryBuilder(summaryList, toolId);
 			ISummary summary = touchpointsSummaryBuilder.Build();
 			Assert.IsNotNull(summary);
+			Assert.IsNotNull(summary);
+			
 		}
 
 		[TestMethod]
