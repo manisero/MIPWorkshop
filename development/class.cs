@@ -33,17 +33,7 @@ namespace MIP.Infrastructure.IO
 
 		#region IFileSystemService Members
 
-		/// <summary>
-		/// 	Determines whether the specified file exists.
-		/// </summary>
-		/// <param name="filePath"> The file path. </param>
-		/// <returns> </returns>
-		public bool FileExists(string filePath)
-		{
-			return File.Exists(filePath);
-		}
-
-		/// <summary>
+			/// <summary>
 		/// 	Reads specified file
 		/// </summary>
 		/// <param name="filePath"> The file path. </param>
@@ -52,6 +42,20 @@ namespace MIP.Infrastructure.IO
 		{
 			return File.ReadAllText(filePath);
 		}
+
+
+		/// <summary>
+		/// Feature 2 Method
+		/// </summary>
+		/// <param name="archivePath">Feature 2 Method The archive path. </param>
+		/// <param name="fileName">Feature 2 Method Name of the file.</param>
+		/// <param name="content">Feature 2 Method The content.</param>
+		public void WtriteFeature2(string archivePath, string fileName, string content)
+		{
+			var memoryStream = new MemoryStream();
+			//TODO: implement Feature 2 Methods
+		}
+
 
 		/// <summary>
 		/// 	Reads the bytes from file.
