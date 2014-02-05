@@ -1,0 +1,455 @@
+@using MIP.MarketBackend.Web.Models.User
+@model UserIndexViewModel
+@{
+	ViewBag.Title = CommonResources.DisplayUsersManagement;
+	Layout = "~/Views/Shared/_Layout.cshtml";
+	var noDataID = "tableNoData";
+
+	var areModificationsAvailable = (bool) ViewData["areModificationsAvailable"];
+
+	const string createUserDialog = "add-user-dialog";
+	const string updateUserDialog = "edit-user-dialog";
+	const string createUserForm = "add-user-form";
+	const string updateUserForm = "edit-user-form";
+}
+
+@section HeadScripts
+{
+	@Scripts.Infrastructure(Url)
+	@this.RenderResource(OptimizationResourceType.Script, "~/scripts/jqx.core", "~/scripts/jqx.widgets", "~/scripts/custom/widgets/claimsWidget.js")
+	@this.RenderResource(OptimizationResourceType.Style, string.Format("~/css/{0}/jqx.widgets", this.GetCurrentTheme()))
+}
+@{
+	if (areModificationsAvailable)
+	{
+		<text>
+			<div id="@createUserDialog" class="ajax-form-dialog" style="display: none;">
+				@Html.Partial("_Add", new ViewDataDictionary
+					{
+						{"useKnockout", true},
+						{"createUserFormId", createUserForm},
+						{"claimsWidgetViewModel", Model.ClaimsWidgetViewModel}
+					})
+			</div>
+			<div id="@updateUserDialog" class="ajax-form-dialog" style="display: none;">
+				@Html.Partial("_Edit", new ViewDataDictionary
+					{
+						{"useKnockout", true},
+						{"updateUserFormId", updateUserForm},
+						{"claimsWidgetViewModel", Model.ClaimsWidgetViewModel}
+					})
+			</div>
+		</text>
+	}
+}
+<div class="ui-jobs-widget"></div>
+<div id="export-container" style="display: none"></div>
+
+<div class="title">
+	<h5>@CommonResources.DisplayUsersManagement</h5>
+</div>
+
+<div class="widget first">
+	<div class="head">
+		<h5 class="iGraph">@CommonResources.DisplayUsers</h5>
+	</div>
+	<div class="mainForm" style="height: 130px">
+		<!-- Statistics -->
+		<div id="stats" class="stats statsSmall floatleft mr50">
+			<ul class="mt10 ml10">
+				<li>
+					<a id="totalUsersCount" data-bind="text: displayedUsersCount" class="countnofloat grey divCentered " title="">0</a>
+					<span>@CommonResources.DisplayTotal</span>
+				</li>
+				<li>
+					<a id="authorizedUsersCount" data-bind="text: authorizedUsersCount" class="countnofloat grey divCentered" title="">0</a>
+					<span>@CommonResources.DisplayAuthorized</span>
+				</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<div class="common-operations-buttons-container">
+	<div class="container-inner">
+		@Html.RenderItemsActions(true, "basicBtn ml10", false, ItemsActionType.Create | ItemsActionType.Export | ItemsActionType.Import)
+	</div>
+	<div class="fix">
+	</div>
+</div>
+
+<div id="dataTable" class="table tablenotopmargin">
+	<div class="dataTables_wrapper">
+		<div class="head">
+			<div class="fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix">
+				@Html.Partial("_PagerTable", Model.Pager, new ViewDataDictionary { { "id", "u" } })
+			</div>
+		</div>
+		<table id="table" class="display data-grid user" data-bind="noData: itemsCount(), noDataPanelID: '@noDataID'">
+			<thead>
+				<tr>
+					<th class="ui-state-default data-avatar"></th>
+					<th class="ui-state-default data-email">
+						<div class="DataTables_sort_wrapper">
+							@CommonResources.DisplayEmail
+							<span data-bind="click: function() { viewModel.sortList('Email'); }" class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span>
+						</div>
+					</th>
+					<th class="ui-state-default data-full-name">
+						<div class="DataTables_sort_wrapper">
+							@CommonResources.DisplayFullName
+							<span data-bind="click: function() { viewModel.sortList('FullName'); }" class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span>
+						</div>
+					</th>
+					<th class="ui-state-default">
+						<span>@CommonResources.DisplayApplicationAccess</span>
+					</th>
+					<th class="ui-state-default data-datetime">
+						<span>@CommonResources.DisplayLastAccess</span>
+					</th>
+					<th class="ui-state-default data-authorized">
+						<div class="DataTables_sort_wrapper">
+							@CommonResources.DisplayAuthorized
+							<span data-bind="click: function() { viewModel.sortList('IsAuthorized'); }" class="DataTables_sort_icon css_right ui-icon ui-icon-carat-2-n-s"></span>
+						</div>
+					</th>
+					<th class="ui-state-default action-buttons"></th>
+				</tr>
+			</thead>
+			<tbody id="list" data-bind="foreach: list, stripe: list, oddClass: 'odd', evenClass: 'even'">
+				<tr id="row" data-bind="css: {'grayed-out' : !IsAuthorized()}" class="gradeA">
+					<td class="data-avatar">
+						<img data-bind="attr : { src : $root.getAvatar($data) }" alt="" class="avatarSmall" />
+					</td>
+					<td id="email" data-bind="text: Email" class="data-email"></td>
+					<td id="fullname" data-bind="text: FullName" class="data-full-name"></td>
+					<td id="applicationaccess" data-bind="foreach: ApplicationAccess">
+						<span data-bind="text: $data" style="display: block;"></span>
+					</td>
+					<td id="lastaccess" data-bind="text: LastAccess" class="data-datetime"></td>
+					<td id="isauthorized" data-bind="css: { 'option-disabled': !$root.isAuthorizationEnabledFor($data) }" class="data-authorized">
+						@Html.YesNoToggle("isAuthorized", "$root.changeAuthorization", "IsAuthorized()")
+					</td>
+					<td id="buttons" class="action-buttons">
+						@if (areModificationsAvailable)
+						{
+							@Html.ListItemActions(ItemActionType.Edit | ItemActionType.Delete)
+						}
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class="fg-toolbar ui-toolbar ui-widget-header ui-corner-bl ui-corner-br ui-helper-clearfix">
+			@Html.Partial("_PagerTable", Model.Pager, new ViewDataDictionary { { "id", "l" } })
+		</div>
+	</div>
+</div>
+
+@Html.Partial("_DisplayNoData", new ViewDataDictionary { { "id", noDataID } })
+@Html.Partial("_Import", Model.UserImportViewModel)
+
+<script type="text/javascript">
+
+	'use strict';
+	
+	var currentTheme = getTheme();
+	
+	var indexUrl = '@Url.Action("Index", "User")';
+	var changeAuthorizationUrl = '@Url.Action("ChangeAuthorization", "User")';
+	var deleteUrl = '@Url.Action("Delete", "User")';
+	
+	var emptyCreateModel = @Html.Raw(KnockoutHelper.CreateViewModel(typeof(CreateUserViewModel)));
+	var emptyUpdateModel = @Html.Raw(KnockoutHelper.CreateViewModel(typeof(UpdateUserViewModel)));
+	var createModel = ko.mapping.fromJS(@Html.Raw(Json.Encode(new CreateUserViewModel())));
+	var updateModel = ko.mapping.fromJS(@Html.Raw(Json.Encode(new UpdateUserViewModel())));
+	
+	var statsModel = {
+		displayedUsersCount: ko.observable(@Model.DisplayedUsersCount),
+		authorizedUsersCount: ko.observable(@Model.AuthorizedUsersCount)
+	};
+
+	var viewModel = {
+		dataManager: new GridDataManager(),
+		list: ko.observableArray(ko.mapping.fromJS(@Html.Raw(Json.Encode(Model.Users)))),
+		itemsCount: ko.observable(ko.mapping.fromJS(@Html.Raw(Json.Encode(Model.Users.Count())))),
+		sorter: ko.mapping.fromJS(@Html.Raw(Json.Encode(Model.Sorter))),
+		updateModel: function(data) {
+			viewModel.list(ko.mapping.fromJS(data.Users));
+			statsModel.displayedUsersCount(data.DisplayedUsersCount);
+			statsModel.authorizedUsersCount(data.AuthorizedUsersCount);
+			ko.mapping.fromJS(data.Pager, pagerModel);
+			ko.mapping.fromJS(data.Sorter, viewModel.sorter);
+		},
+		pageList: function(pageIndex) {
+			pagerModel.PageIndex(pageIndex);
+			viewModel.get();
+		},
+		decrementPager: function() {
+			if (pagerModel.PageIndex() == pagerModel.LastPage()) {
+				var currentPageIndex = (pagerModel.ElementsCount() % pagerModel.PageSize() == 1) ?
+					pagerModel.PageIndex() - 1 : pagerModel.PageIndex();
+				pagerModel.PageIndex(currentPageIndex > 0 ? currentPageIndex : 1);
+			}
+		},
+		sortList: function(key) {
+			if (viewModel.sorter.Key() != key) {
+				viewModel.sorter.Key(key);
+				viewModel.sorter.IsAscending(true);
+			} else {
+				viewModel.sorter.IsAscending(!viewModel.sorter.IsAscending());
+			}
+			pagerModel.PageIndex(1);
+			viewModel.get();
+		},
+		get: function() {
+			var data = { sorter: ko.mapping.toJS(viewModel.sorter), pageIndex: pagerModel.PageIndex() };
+			viewModel.dataManager.loadItems(data);
+		},
+		getAvatar: function(user) {
+			var avatar = user.Avatar();
+
+			return avatar == null
+				? '@Url.ThemeContent("/images/avatar.png")'
+				: 'data:image/png;base64,' + avatar;
+		},
+		isCurrentlyLoggedOn: function(user) {
+			return (user.UserID() == @Model.CurrentUserId);
+		},
+		isAuthorizationEnabledFor: function(user) {
+			return !viewModel.isCurrentlyLoggedOn(user);
+		},
+		changeAuthorization: function(user) {
+			if (viewModel.isCurrentlyLoggedOn(user)) {
+				return;
+			}
+
+			var data = {
+				id: user.UserID(),
+				isAuthorized: !user.IsAuthorized()
+			};
+
+			viewModel.dataManager.ajaxPost({
+				url: changeAuthorizationUrl,
+				data: JSON.stringify(data),
+				success: function() {
+					viewModel.get();
+				}
+			});
+		}
+	};
+	
+	viewModel.createItem = function (mappedResult) {
+		viewModel.dataManager.startAdding(function (form) {
+			initTabs($('#' + '@createUserDialog' + ' #tabs'));
+				
+			//clear the model using emptyModel
+			ko.mapping.fromJS(emptyCreateModel, {}, createModel);
+			ClaimsWidget.clear();
+		});
+	};
+
+	viewModel.editItem = function(data) {
+		viewModel.dataManager.startEditing(function(form) {
+			initTabs($('#' + '@updateUserDialog' + ' #tabs'));
+
+			viewModel.dataManager.ajaxGet(
+				{
+					url: '@Url.Action("Details", "User")',
+					data: { id: data.UserID() },
+					success: function(e) {
+						//clear the model using emptyModel
+						ko.mapping.fromJS(emptyUpdateModel, {}, updateModel);
+						ko.mapping.fromJS(e.model, {}, updateModel);
+
+						ClaimsWidget.update(e.model.UserClaims, e.model.IsCurrentlyLoggedOn);
+						viewModel.dataManager.startEditing(function(form) {
+						});
+					}
+				});
+		});
+	};
+	
+	viewModel.deleteItem = function(model) 
+	{
+		var userModel = ko.mapping.toJS(model);
+
+		if(viewModel.isCurrentlyLoggedOn(model)) {
+			jAlert('@Html.Raw(CommonResources.DisplayCantDeleteLoggedUserMessage)', '@CommonResources.DisplayCantDeleteLoggedUserTitle');
+        	return;
+		}
+		
+		var format = '@Html.Raw(CommonResources.DisplayDeleteSelectedUserMessage)';
+		var description = format.replace("%USEREMAIL%", userModel.Email);
+
+		viewModel.dataManager.deleteItem({ data: { "id": userModel.UserID }, info: description });
+	};
+
+	$(function() {
+				
+		ClaimsWidget.init('@Html.Raw(Json.Encode(Model.ClaimsWidgetViewModel))');
+		ClaimsWidget.bind("editClaimsWidget");
+		ClaimsWidget.bind("addClaimsWidget");
+		
+		ko.applyBindings(statsModel, $('#stats')[0]);
+		ko.applyBindings(viewModel, $('#table')[0]);
+		ko.applyBindings(createModel, $('#@createUserForm')[0]);
+		ko.applyBindings(updateModel, $('#@updateUserForm')[0]);
+		
+		// Initialize pager
+		$('.pageLink').live('click', function() {
+			var pageIndex = $(this).attr('data-pageindex');
+			
+			if ($(this).attr('href') != null && pageIndex != null) {
+				viewModel.pageList(pageIndex);
+			}
+			
+			return false;
+		});
+		
+		$('#createItem').click(function(e) {
+			if (!$(this).hasClass("disabledBtn")) {
+				viewModel.createItem(emptyCreateModel);
+			}
+		});
+
+		// Initialize no data panel
+		displayNoData.observed = statsModel.displayedUsersCount;
+		displayNoData.dataTable = $('#dataTable');
+		displayNoData.start();
+
+		// Initialize data manager
+		var dataMgrOpts = {
+			ajaxLoaderOptions: {
+				selector: "#dataTable"
+			},
+			loadItemsOptions: {
+				url: indexUrl,
+				method: "POST",
+				success: function(d) {
+					viewModel.updateModel(d.model);
+					placeholders.update();
+				}
+			}
+		};
+
+		dataMgrOpts.addItemOptions = {
+			formDataProvider: function() {
+				//retrieve user claims from the widget
+				createModel.UserClaims = ClaimsWidget.getFlatJS();
+				
+				return ko.mapping.toJS(createModel);
+			},
+			formSelector: '#@createUserForm',
+			formDialogSelector: '#@createUserDialog',
+			formDialogOptions: {
+				title: '@CommonResources.DisplayCreateUser',
+				width: 800,
+			},
+			resetForm: false,
+			actions: {
+				success: function() {
+					viewModel.get();
+				},
+				logicalerror: function(msg) {
+					if (msg) {
+						$().showErrorBalloon(msg);
+					} else {
+						$().showErrorBalloon('@CommonResources.DisplayCreateUserFailed');
+					}
+				}
+			}
+		};
+		
+		dataMgrOpts.editItemOptions = {
+			formDataProvider: function() {
+				//retrieve user claims from the widget
+				updateModel.UserClaims = ClaimsWidget.getFlatJS();
+					
+				return ko.mapping.toJS(updateModel);
+			},
+			formSelector: '#@updateUserForm',
+				formDialogSelector: '#@updateUserDialog',
+			formDialogOptions: {
+				title: '@CommonResources.DisplayUpdateUser',
+					width: 800,
+				},
+			resetForm: false,
+			actions: {
+				success: function() {
+					viewModel.get();
+				},
+				logicalerror: function(msg) {
+					if (msg) {
+						$().showErrorBalloon(msg);
+					} else {
+						$().showErrorBalloon('@CommonResources.DisplayUpdateUserFailed');
+						}
+					}
+				}
+		};
+
+		dataMgrOpts.deleteItemOptions = {
+			url: deleteUrl,
+			success: function(/*d*/) {
+				viewModel.decrementPager();
+				viewModel.get();
+			},
+			confirmation: true,
+			ui: {
+				okbutton: '@CommonResources.DisplayOK',
+					cancelbutton: '@CommonResources.DisplayCancel',
+					title: '@CommonResources.DisplayDeleteSelectedUserTitle',
+					description: '@Html.Raw(CommonResources.DisplayDeleteSelectedUserMessage)'
+				}
+		};
+			
+		viewModel.dataManager.initialize(dataMgrOpts);
+		
+		// Initialize import
+		var importManager = new SingleFileImportManager({
+			url: '@Url.Action("Enqueue", "Import")',
+			importTemplateUrl: '@Url.Action("GetImportTemplate", "Import", new { importType = Model.UserImportViewModel.ImportType })',
+			importType: '@Model.UserImportViewModel.ImportType',
+			dialogTitle: '@CommonResources.DisplayImportUserDialogTitle',
+			dialogDescription: '@CommonResources.DisplayImportUserPopupDescription',
+			progressDialogTitle : '@CommonResources.DisplayImportUserProgressDialogTitle'
+		});
+	
+		$("#importItems").bind("click", function () {
+			importManager.start();
+		});
+
+		// Initialize export
+		$("#export-container").exportWidget({
+			exportPopupDescription: '@CommonResources.ExportPopupDescription',
+			exportButtonDescription: '@CommonResources.Export',
+			cancelButtonDescription: '@CommonResources.DisplayCancel',
+			dialogTitle: '@CommonResources.ExportUserStartTitle',
+			processOnExportCallback: function (params) {
+				$.ajax({
+					type: "post",
+					url: '@Url.Action("EnqueueExport")',
+					data: JSON.stringify({
+						exportVersion: params.versionArg,
+						sorter: ko.mapping.toJS(viewModel.sorter)
+					}),
+					contentType: "application/json",
+					success: function (data, textStatus, jqxhr) {
+						$(document).trigger('expandjobswidget');
+					}
+				});
+
+				$("#export-container").exportWidget('close-dialog');
+			},
+			theme: currentTheme,
+			versionListHeader: '@CommonResources.ExportVersion',
+			exportVersionSource: '@Html.Raw(Json.Encode(Model.UserExportViewModel.AvailableVersions))'
+		});
+
+		$('#exportItems').click(function (e) {
+			$("#export-container").exportWidget('run');
+			e.preventDefault();
+		});
+	});
+	
+</script>
