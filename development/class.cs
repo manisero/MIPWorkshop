@@ -17,7 +17,7 @@ namespace MIP.Infrastructure.IO
 		/// <summary>
 		/// Backup files naming format
 		/// </summary>
-		private const string BACKUP_FILE_NAME_FORMAT = "_yyyy-MM-dd_HH-mm-ss";
+		private const string BACKUP_FILE_NAME_FORMAT = "_yyyy-MM-dd_HH-mm-ss;LKJ;KLJ;LKJ";
 
 		/// <summary>
 		/// Buffer size
